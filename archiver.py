@@ -1,80 +1,91 @@
 from collections import Counter
 
-class Node:
-    def __init__(self, char, freq=0, left=None, right=None):
+class Tree:
+    # Инициализация узла древа: символ, код символа, левая и правая ветви древа
+    def __init__(self, char, code=0, left=None, right=None):
         self.char = char
-        self.freq = freq
+        self.code = code
         self.left = left
         self.right = right
 
+    # Возвращает сам объект для итератора
     def __iter__(self):
         return self
 
+    # Вовзращает текстовое представление объекта/сущности в определенном формате
+    # Пример: Tree(None, 11, Tree(None, 4, Tree(None, 2, None, None))
     def __repr__(self):
-        return '{}({!r}, {!r}, {!r}, {!r})'.format(self.__class__.__name__, self.char, self.freq, self.left, self.right)
+        return '{}({!r}, {!r}, {!r}, {!r})'.format \
+            (self.__class__.__name__, self.char, self.code, self.left, self.right)
 
 
-def generate_file(name: str, content):
-    with open(name + '.txt', 'wb') as f:
-        f.write(content)
-        print('File has been encoded and saved as', name + '.txt')
+# Генерация текстового файла
+def write_file(filename: str, data):
+    with open(filename + '.txt', 'wb') as f:
+        f.write(data)
+        print('Данные были сохранены в файл', filename + '.txt')
 
-def build_huffman_tree(char_freq):
-    queue = [(freq, Node(char, freq)) for char, freq in char_freq.items()]
-    while len(queue) > 1:
-        with open('roots.txt', 'wb') as f:
-            queue.sort(key=lambda x: x[0])  # Use a custom sorting function
-            freq1, node1 = queue.pop(0)
-            freq2, node2 = queue.pop(0)
-            queue.append((freq1+freq2, Node(None, freq1+freq2, node1, node2)))
-            _, root = queue[0]
-            f.write(str(root).encode())
-    return root
-
-def generate_huffman_codes(root, code=''):
-    if root is None:
-        return {}
-    if root.char is not None:
-        return {root.char: code}
-    codes = {}
-    codes.update(generate_huffman_codes(root.left, code + '0'))
-    codes.update(generate_huffman_codes(root.right, code + '1'))
-    return codes
-
-def encode_huffman(codes, text):
-    string = ''.join(codes[char] for char in text if char in codes)
-    generate_file('encoded_file', string.encode())
-
-def read_nodes(file):
-    with open(file, 'r') as f:
+# Чтение файла для динамического исполнения содержимового в файле
+# Пример: eval("2 + 2") -> Вывод: 4
+def eval_read_file(filename):
+    with open(filename, 'r') as f:
         return eval(f.read())
 
-def read_encoded_file(file):
-    with open(file, 'r') as f:
-        return f.read()
+# Постройка древа Хаффмана
+def build_huffman_tree(frequencies):
+    tree = None
+    queue = [(code, Tree(char, code)) for char, code in frequencies.items()]
+    while len(queue) > 1:
+        queue.sort(key=lambda x: x[0])
+        code1, node1 = queue.pop(0)
+        code2, node2 = queue.pop(0)
+        queue.append((code1 + code2, Tree(None, code1 + code2, node1, node2)))
+        _, tree = queue[0]
+    write_file('tree', str(tree).encode())
+    return tree
 
-def decode_huffman(root, encoded_text):
-    encoded_text = encoded_text
-    decoded_text = ''
-    node = root
-    for bit in encoded_text:
+# Сопоставление двоичного кода и символов
+def get_codes(tree, code=''):
+    if tree is None:
+        return {}
+    if tree.char is not None:
+        return {tree.char: code}
+    codes = {}
+    codes.update(get_codes(tree.left, code + '0'))
+    codes.update(get_codes(tree.right, code + '1'))
+    return codes
+
+# Функция кодирования данных
+def encode_file(codes, data):
+    encoded_data = ''.join(codes[char] for char in data if char in codes)
+    write_file('encoded_file', encoded_data.encode())
+
+# Функция декодирования данных
+def decode_file(tree, encoded_data):
+    encoded_data = str(encoded_data)
+    decoded_data = ''
+    node = tree
+    for bit in encoded_data:
         if bit == '0':
             node = node.left
         elif bit == '1':
             node = node.right
         if node and node.char is not None:
-            decoded_text += str(chr(node.char))  # Convert node.char to a string
-            node = root
-    generate_file('decoded_file', decoded_text.encode())
+            decoded_data += str(chr(node.char))
+            node = tree
+    write_file('decoded_file', decoded_data.encode())
 
+# Основной код программы
 def main():
     with open('file.txt', 'rb') as f:
         data = f.read()
-    char_freq = Counter(data)
-    root = build_huffman_tree(char_freq)
-    codes = generate_huffman_codes(root)
-    encode_huffman(codes, data)
-    decode_huffman(read_nodes('roots.txt'), read_encoded_file('encoded_file.txt'))
+    # Функция Counter(), импортированная из модуля collections,
+    # помогает считать частоту символов
+    frequencies = Counter(data)
+    huffman_tree = build_huffman_tree(frequencies)
+    codes = get_codes(huffman_tree)
+    encode_file(codes, data)
+    decode_file(eval_read_file('tree.txt'), eval_read_file('encoded_file.txt'))
 
 
 if __name__ == "__main__":
