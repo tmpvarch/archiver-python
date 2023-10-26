@@ -75,17 +75,47 @@ def decode_file(tree, encoded_data):
             node = tree
     write_file('decoded_file', decoded_data.encode())
 
+# Функция input() с проверкой
+def check_input(key, message=''):
+    if key == 'ENTRY':
+        while True:
+            action = input('Выберите действие:\n1 - архивировать\n2 - разархивировать\nq - закрыть программу\nВвод: ')
+            if action not in ['1', '2', 'q']:
+                print('Неверное действие, попробуйте еще раз\n')
+            else:
+                return action
+    if key == 'FILE':
+        while True:
+            try:
+                file = input(message)
+                # проверяем на ошибку
+                open(file)
+            except FileNotFoundError:
+                print('Файл не найден, повторие ввод\n')
+            else:
+                return file
+
 # Основной код программы
 def main():
-    with open('file.txt', 'rb') as f:
-        data = f.read()
-    # Функция Counter(), импортированная из модуля collections,
-    # помогает считать частоту символов
-    frequencies = Counter(data)
-    huffman_tree = build_huffman_tree(frequencies)
-    codes = get_codes(huffman_tree)
-    encode_file(codes, data)
-    decode_file(eval_read_file('tree.txt'), eval_read_file('encoded_file.txt'))
+    while True:
+        option = check_input('ENTRY')
+        if option == '1':
+            source_file = check_input('FILE', 'Введите название файла, который вы хотите архивировать: ')
+            with open(source_file, 'rb') as f:
+                data = f.read()
+            # Функция Counter(), импортированная из модуля collections,
+            # помогает считать частоту символов
+            frequencies = Counter(data)
+            huffman_tree = build_huffman_tree(frequencies)
+            codes = get_codes(huffman_tree)
+            encode_file(codes, data)
+        if option == '2':
+            encoded_file = check_input('FILE', 'Введите назваине файла, который вы хотите разархивировать: ')
+            tree_file = check_input('FILE', 'Введите название файла с древом Хаффмана: ')
+            decode_file(eval_read_file(tree_file), eval_read_file(encoded_file))
+        if option == 'q':
+            exit()
+        print('\n')
 
 
 if __name__ == "__main__":
