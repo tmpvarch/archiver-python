@@ -27,9 +27,12 @@ def write_file(filename: str, data):
 
 # Чтение файла для динамического исполнения содержимового в файле
 # Пример: eval("2 + 2") -> Вывод: 4
-def eval_read_file(filename):
+def read_file(filename, key=''):
     with open(filename, 'r') as f:
-        return eval(f.read())
+        if key == 'EVAL':
+            return eval(f.read())
+        else:
+            return f.read()
 
 # Постройка древа Хаффмана
 def build_huffman_tree(frequencies):
@@ -112,7 +115,7 @@ def main():
         if option == '2':
             encoded_file = check_input('FILE', 'Введите назваине файла, который вы хотите разархивировать: ')
             tree_file = check_input('FILE', 'Введите название файла с древом Хаффмана: ')
-            decode_file(eval_read_file(tree_file), eval_read_file(encoded_file))
+            decode_file(read_file(tree_file, 'EVAL'), read_file(encoded_file))
         if option == 'q':
             exit()
         print('\n')
